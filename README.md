@@ -2,6 +2,10 @@
 
 **Turn one hard "which should I do?" into a judged tournament — and get back a defensible winner.**
 
+<p align="center">
+  <img src="demo/bakeoff.gif" alt="bakeoff deriving roles, auto-building a rubric, judging candidates, and ranking a winner" width="820">
+</p>
+
 `bakeoff` is a [Claude Code](https://docs.claude.com/en/docs/claude-code) skill. Hand it a decision
 and it **generates diverse candidate solutions**, **auto-derives the criteria that matter for _that_
 specific problem** (so you don't have to know what to score on), **judges every candidate with
@@ -128,8 +132,25 @@ bakeoff/
 │   └── evaluate-score.md        # scoring discipline (vendored)
 ├── scripts/
 │   └── reconcile-scores.js      # deterministic two-judge reconciliation (Node.js)
-└── examples/                    # illustrative run
+├── examples/                    # illustrative run
+└── demo/
+    ├── bakeoff.tape             # VHS script that renders the README GIF
+    ├── demo.sh                  # paced replay of a bakeoff summary
+    ├── setup.sh                 # hidden shell setup for the tape
+    └── bakeoff.gif              # the rendered demo
 ```
+
+### Regenerating the demo GIF
+
+The hero GIF is scripted with [VHS](https://github.com/charmbracelet/vhs), so it re-renders
+identically:
+
+```bash
+brew install vhs        # one-time (pulls ttyd + ffmpeg)
+vhs demo/bakeoff.tape    # writes demo/bakeoff.gif
+```
+
+Edit `demo/demo.sh` to change the content or `demo/bakeoff.tape` for size/theme/pacing.
 
 ## Credit
 
