@@ -74,20 +74,29 @@ ungrounded pick presented as confident is the one failure this step exists to pr
 - **Compare**: `/bakeoff --compare` (+ 2–4 pasted candidates) — pure judging over what you bring.
 
 **Depth** — how hard it tries. **When no depth flag is passed, Frame auto-selects one from the
-decision's stakes** (surfaced at the checkpoint, where you can bump it); an explicit
+decision's *grounded* stakes** (surfaced at the checkpoint, where you can bump it); an explicit
 `--lean`/`--thorough` always overrides. Each row is the *complete* setting — candidate count, judge
 count, refute, synthesis, **and the rubric-builder model** all follow from the depth, so the steps
 below just branch on "lean / default / thorough":
 
 | Depth | Candidates | Judges | Refute | Synthesis | Rubric model | Auto-picked when the decision is… |
 |-------|-----------|--------|--------|-----------|--------------|-----------------------------------|
-| `--lean` | 3 | **1** (skip reconcile) | no | no | **Sonnet** | narrow options · low blast radius · easily reversible / internal |
-| *default* | 4 | 2 + reconcile | yes | offered | **Opus** | several defensible options · costly-to-reverse but recoverable |
+| `--lean` | 3 | **1** (skip reconcile) | no | no | **Sonnet** | narrow options · **low grounded magnitude** · easily reversible / per-item-gated / internal |
+| *default* | 4 | 2 + reconcile | yes | offered | **Opus** | several defensible options **and material grounded magnitude** · costly-to-reverse but recoverable |
 | `--thorough` | 5–6 | 2 + reconcile | yes | yes | **Opus** | high blast radius: irreversible · prod · data-model / public-API / migration / security |
 
 The rubric build is the one call where reasoning quality most changes the outcome, so it gets **Opus**
 at default/`--thorough` and drops to **Sonnet** only at `--lean` (small, reversible calls). `--thorough`
 always confirms its cost before spending (auto-picked or flagged).
+
+**Auto-pick keys off *grounded magnitude*, not the surface shape of the question.** "Several
+defensible options" and "sounds costly-to-reverse" are *necessary* signals, not sufficient ones — a
+decision can present as weighty yet turn out small once you know the real numbers (the dollars per
+month, the blast radius, whether it's per-item-gated and trivially backed out). Frame gathers that
+magnitude cheaply *as part of grounding* (Step 1) **before** locking the tier, so a genuinely small,
+reversible call lands on `--lean` instead of paying default-depth effort — the failure this step
+prevents is a two-judge Opus-rubric run on a choice the adversarial round would have shown was a
+rounding error.
 
 ## Worked example
 `/bakeoff "should our new ingestion service be a monolith, a modular monolith, or split services?"`
@@ -135,12 +144,20 @@ with the substance (the derived roles, then the rubric at the checkpoint). Verif
 `evaluate` assets exist **silently** (*Dependencies & schema contract*) and speak up *only* if one is
 missing — then say bakeoff builds on the `evaluate` skill and stop. Extract the **decision**, any
 hard constraints, the mode (generate / seed / compare), and the shortlist size `N` (default 3).
-**Choose the depth:** honor an explicit `--lean`/`--thorough`; otherwise **infer it from the
-decision's stakes** — narrow + easily reversible → *lean*; a real costly-to-reverse choice →
+**Choose the depth — from *grounded* stakes, not the question's surface.** Honor an explicit
+`--lean`/`--thorough`; otherwise infer it, but **sniff the real magnitude first** (as a cheap part of
+grounding, before locking the tier): what does a wrong call actually cost — dollars/month, blast
+radius, is it per-item-gated and trivially reversible? A decision can *sound* weighty ("which
+generation strategy", "which store") yet be a rounding error once grounded (a ~$30–150/mo,
+per-project-gated, easily-backed-out call is `--lean`, not default — don't spend two judges and an
+Opus rubric to discover that in the adversarial round). Then map the **grounded** stakes: narrow +
+low-magnitude + easily reversible → *lean*; a real costly-to-reverse choice with material magnitude →
 *default*; irreversible / high blast radius (prod, data model, public API, migration, security) →
-*thorough* (see *Modes & depth*). The depth fixes the candidate count `K`, the judge count,
-refute/synthesis, and the rubric-builder model, and is shown at the checkpoint so you can bump it. If
-you infer *thorough*, confirm its cost before generating (the ~$5–10 tier). If the problem is too
+*thorough* (see *Modes & depth*). "Several defensible options" alone doesn't earn default — magnitude
+does. The depth fixes the candidate count `K`, the judge count, refute/synthesis, and the
+rubric-builder model, and is shown at the checkpoint so you can bump it (and if grounding later
+reveals the magnitude was mis-sized, say so and re-size before judging). If you infer *thorough*,
+confirm its cost before generating (the ~$5–10 tier). If the problem is too
 vague to produce distinct candidates ("make it better"), ask one sharpening question first — a fuzzy
 decision yields fuzzy candidates the tournament can't recover. Save nothing to global state; this is a
 single self-contained run.
@@ -159,6 +176,13 @@ approach, key decisions, tradeoffs it accepts, and (for code) concrete shape/`fi
 for a tool/library choice, read the real code for a codebase choice — so candidates are specific, not
 generic guesses. Assign stable IDs (**A, B, C, …**). In `--seed` mode, the seeded suggestion is
 **Candidate A**; generate `K-1` rivals.
+
+**Carry the grounding forward.** When a candidate grounds a load-bearing claim, it must surface the
+*evidence anchor* alongside the claim — the exact `file:line` it read, or the URL/doc + the specific
+fact it pulled — as a compact `evidence:` list on the candidate, not just prose. This isn't
+bookkeeping: it's what lets the judges **re-check the same anchors instead of re-grounding the whole
+decision cold** (Step 4), which is where a big slice of the judge-stage wall-clock otherwise goes. A
+load-bearing claim with no anchor is fair game for a judge to treat as unverified.
 
 ### 3. Build the shared rubric (the "what do I evaluate?" step) — runs ∥ with Step 2
 **Dispatch this at the same time as generation, not after it.** The rubric is the criteria for the
@@ -215,6 +239,15 @@ for each judge (not a fixed A,B,C,D for one and C,D,A,B for the other), so no si
 systematically favors a candidate across the panel. Judges never see each other's scores. Judges
 **verify** a candidate's factual or codebase claims with their read/search tools rather than trust
 them — an unverified load-bearing claim caps that dimension's confidence instead of earning full credit.
+
+**Re-check the carried anchors first; don't re-ground cold.** The candidates already arrive with an
+`evidence:` list (Step 2) — the `file:line` they read, the URL + fact they pulled. A judge verifies by
+**re-checking those exact anchors** (re-read the cited lines, re-open the cited source), which is a
+cheap confirm, *not* a fresh from-scratch search of the whole decision. Only spend a cold
+search/read when a load-bearing claim has **no** anchor, or its anchor doesn't actually support it
+(that's the discrepancy worth the time). This is the same verification rigor — an anchor that fails
+the re-check still caps the dimension's confidence — done without every judge independently
+re-grounding what the generators already grounded, which is the main avoidable cost in the judge stage.
 
 **Reconcile per candidate.** For each candidate `X`, write judge 1's and judge 2's scores for that
 candidate to `judge1-X.yaml` / `judge2-X.yaml` (in the `dimension_scores:` schema — see *Dependencies
