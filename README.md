@@ -9,14 +9,9 @@
   <sub>Terminal summary from a real run — verdict and scores are from the saved <a href="examples/email-deadline-generation.md">report</a>, re-rendered at a readable pace.</sub>
 </p>
 
-`bakeoff` is a [Claude Code](https://docs.claude.com/en/docs/claude-code) skill. Hand it a decision
-and it **generates diverse candidate solutions**, **auto-derives the criteria that matter for _that_
-specific problem** (so you don't have to know what to score on), **judges every candidate with
-independent scorers**, and returns the **winner plus a ranked shortlist** — with the reason each one
-won or lost.
+`bakeoff` is a [Claude Code](https://docs.claude.com/en/docs/claude-code) skill. Hand it a decision and it **generates diverse candidate solutions**, **auto-derives the criteria that matter for _that_ specific problem** (so you don't have to know what to score on), **judges every candidate with independent scorers**, and returns the **winner plus a ranked shortlist** — with the reason each one won or lost.
 
-The hard part of any comparison isn't the scoring — it's knowing *what to evaluate*. bakeoff derives
-the rubric for you. Here's the run shown in the GIF above:
+The hard part of any comparison isn't the scoring — it's knowing *what to evaluate*. bakeoff derives the rubric for you. Here's the run shown in the GIF above:
 
 ```
 /bakeoff "8h/24h email-deadline path: Message Batches, keep sync per-cohort, or embedding-cosine merge?"
@@ -34,27 +29,18 @@ Refute → both judges picked A; the adversarial pass showed the 50% cut is half
 Winner: B — keep sync now; meter spend, escalate 24h-config projects to Batches past ~$200/mo.
 ```
 
-You never supplied the six dimensions or their weights — and the adversarial pass caught that the
-judges' pick rested on a saving too small to matter. That's the point.
+You never supplied the six dimensions or their weights — and the adversarial pass caught that the judges' pick rested on a saving too small to matter. That's the point.
 
 ---
 
 ## Why it's built this way
 
-- **Select, don't blend.** Diverse candidates + judge-based *selection* beats averaging them into
-  mush. Synthesis is offered only as an optional final graft — and only kept if it *re-scores above*
-  the best single candidate.
-- **Diversity is the biggest lever.** Each candidate generator gets a distinct, problem-specific role
-  (e.g. `scalability-first` vs `migration-safety-first`), so the field genuinely spans the space.
-- **Independent judges, mechanically reconciled** — not a debate (debate amplifies bias). Two judges
-  score independently; a deterministic script merges them with a lower-score rule on disagreements.
-- **Position-bias controlled.** Each judge sees the candidates in a different shuffled order, referenced
-  by stable IDs.
-- **The leader gets stress-tested.** Before committing, an adversarial pass actively tries to *refute*
-  the top candidate. A plausible-but-wrong winner shouldn't survive.
-- **Grounded when it matters.** For decisions that hinge on real facts (a library version, your actual
-  codebase), it reads/searches before judging — and flags any part it couldn't verify as
-  "training-knowledge only."
+- **Select, don't blend.** Diverse candidates + judge-based *selection* beats averaging them into mush. Synthesis is offered only as an optional final graft — and only kept if it *re-scores above* the best single candidate.
+- **Diversity is the biggest lever.** Each candidate generator gets a distinct, problem-specific role (e.g. `scalability-first` vs `migration-safety-first`), so the field genuinely spans the space.
+- **Independent judges, mechanically reconciled** — not a debate (debate amplifies bias). Two judges score independently; a deterministic script merges them with a lower-score rule on disagreements.
+- **Position-bias controlled.** Each judge sees the candidates in a different shuffled order, referenced by stable IDs.
+- **The leader gets stress-tested.** Before committing, an adversarial pass actively tries to *refute* the top candidate. A plausible-but-wrong winner shouldn't survive.
+- **Grounded when it matters.** For decisions that hinge on real facts (a library version, your actual codebase), it reads/searches before judging — and flags any part it couldn't verify as "training-knowledge only."
 
 ## Install
 
@@ -71,8 +57,7 @@ Then in Claude Code:
 /bakeoff "which caching strategy should we use for the API layer?"
 ```
 
-That's it. The skill is **self-contained** — the rubric-builder, scorer, and reconciliation script are
-bundled (see [Layout](#layout)). No other skills required.
+That's it. The skill is **self-contained** — the rubric-builder, scorer, and reconciliation script are bundled (see [Layout](#layout)). No other skills required.
 
 ### Requirements
 
@@ -87,11 +72,9 @@ Reach for bakeoff when **all three** hold:
 2. **Costly to reverse** — a wrong call is expensive to unwind.
 3. **Unclear criteria** — you can't easily say *why* one option should beat another.
 
-Good fits: architecture choices, library/database/tool selection, refactor strategies, migration
-approaches, "is the AI's suggestion actually good, or is there something better?"
+Good fits: architecture choices, library/database/tool selection, refactor strategies, migration approaches, "is the AI's suggestion actually good, or is there something better?"
 
-**Don't** use it when a test, type-check, or lint settles the question, or when you're scoring a single
-artifact with no alternatives — that's a job for a plain evaluation, not a tournament.
+**Don't** use it when a test, type-check, or lint settles the question, or when you're scoring a single artifact with no alternatives — that's a job for a plain evaluation, not a tournament.
 
 ## Modes & depth
 
@@ -120,10 +103,7 @@ FRAME → { GENERATE K candidates  ∥  BUILD RUBRIC } → [rubric gate] →
    winner + top-N shortlist (+ optional synthesis) → REPORT
 ```
 
-The rubric is built **in parallel** with candidate generation and **blind to the candidates** — so it
-describes the *decision*, not whichever option it might otherwise favor. Every run ends with a saved
-report (`docs/bakeoffs/YYYY-MM-DD-<slug>.md`) containing the recommendation, the shortlist, the full
-score matrix, judge agreement, and the rubric — so the decision is auditable and reusable later.
+The rubric is built **in parallel** with candidate generation and **blind to the candidates** — so it describes the *decision*, not whichever option it might otherwise favor. Every run ends with a saved report (`docs/bakeoffs/YYYY-MM-DD-<slug>.md`) containing the recommendation, the shortlist, the full score matrix, judge agreement, and the rubric — so the decision is auditable and reusable later.
 
 See full saved reports — a real run and an illustrative one — in [`examples/`](examples/).
 
@@ -149,8 +129,7 @@ bakeoff/
 
 ### Regenerating the demo GIF
 
-The hero GIF is scripted with [VHS](https://github.com/charmbracelet/vhs), so it re-renders
-identically:
+The hero GIF is scripted with [VHS](https://github.com/charmbracelet/vhs), so it re-renders identically:
 
 ```bash
 brew install vhs        # one-time (pulls ttyd + ffmpeg)
@@ -161,8 +140,7 @@ Edit `demo/demo.sh` to change the content or `demo/bakeoff.tape` for size/theme/
 
 ## Credit
 
-The rubric-building and score-reconciliation logic is adapted from the `evaluate` skill; bakeoff
-vendors its own copies so it runs standalone.
+The rubric-building and score-reconciliation logic is adapted from the `evaluate` skill; bakeoff vendors its own copies so it runs standalone.
 
 ## License
 
