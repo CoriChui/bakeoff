@@ -16,22 +16,26 @@ independent scorers**, and returns the **winner plus a ranked shortlist** — wi
 won or lost.
 
 The hard part of any comparison isn't the scoring — it's knowing *what to evaluate*. bakeoff derives
-the rubric for you.
+the rubric for you. Here's the run shown in the GIF above:
 
 ```
-/bakeoff "should our new ingestion service be a monolith, a modular monolith, or split services?"
+/bakeoff "8h/24h email-deadline path: Message Batches, keep sync per-cohort, or embedding-cosine merge?"
 
-Roles derived → scalability-first · simplicity-first · migration-safety-first · cost-first
-Rubric (auto)  → Operational simplicity 25 · Scale headroom 20 · Migration risk 20 ·
-                 Cognitive load 15 · Cost 12 · Evolvability 8      [approve? yes]
-Judges x2 → reconcile → shortlist:
-   1. Modular monolith   87   wins on simplicity + migration risk; loses on scale headroom
-   2. Monolith           79
-   3. Services           74   best scale, worst migration risk + cost
-Winner: Modular monolith — strongest on the two highest-weight dims, robust across both judges.
+Roles derived → status-quo · cost-first (Batches) · dedup (merge) · max-savings (hybrid)
+Rubric (auto) → Deadline-fit 28 · COGS reduction 24 · Personalization 16 ·
+                Impl. complexity 16 · Ops reliability 12 · Reversibility 4      [approve? yes]
+Judges ×2 → reconcile → shortlist:
+   1. B  keep sync per-cohort   73   wins deadline-fit + simplicity; 0 on COGS
+   2. A  Message Batches        70   verified 50% off — small absolute saving at this volume
+   3. C  embedding merge        69
+   4. D  hybrid                 55
+Refute → both judges picked A; the adversarial pass showed the 50% cut is half of an already-tiny
+         bill (~$30–150/mo) — not worth the async machinery → flips to B.
+Winner: B — keep sync now; meter spend, escalate 24h-config projects to Batches past ~$200/mo.
 ```
 
-You never supplied the six dimensions or their weights. That's the point.
+You never supplied the six dimensions or their weights — and the adversarial pass caught that the
+judges' pick rested on a saving too small to matter. That's the point.
 
 ---
 
