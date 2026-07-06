@@ -1,0 +1,11 @@
+{
+  "name": "bakeoff",
+  "description": "Turn one decision into a judged tournament of solutions, then pick the best — generate diverse candidates, auto-derive the rubric, judge independently, adversarially verify the leader, and return a ranked winner.",
+  "version": "0.1.0",
+  "author": { "name": "YOUR_USERNAME" },
+  "homepage": "https://github.com/YOUR_USERNAME/bakeoff",
+  "repository": "https://github.com/YOUR_USERNAME/bakeoff",
+  "license": "MIT",
+  "keywords": ["decision", "evaluation", "rubric", "tournament", "judge", "claude-code", "skill"],
+  "agents": []
+}

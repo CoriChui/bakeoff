@@ -44,11 +44,25 @@ You never supplied the six dimensions or their weights — and the adversarial p
 
 ## Install
 
-Copy the skill into your Claude Code skills directory:
+Pick one — all three install the same self-contained skill.
+
+**Agent Skills CLI** (works with Claude Code, Codex, Cursor):
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/bakeoff.git
-cp -r bakeoff ~/.claude/skills/bakeoff
+npx skills add YOUR_USERNAME/bakeoff
+```
+
+**Claude Code plugin** (marketplace install, auto-updates):
+
+```
+/plugin marketplace add YOUR_USERNAME/bakeoff
+/plugin install bakeoff@bakeoff
+```
+
+**Manual** — clone straight into your skills directory:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/bakeoff.git ~/.claude/skills/bakeoff
 ```
 
 Then in Claude Code:

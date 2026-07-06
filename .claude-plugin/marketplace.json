@@ -1,0 +1,12 @@
+{
+  "name": "bakeoff",
+  "owner": { "name": "YOUR_USERNAME" },
+  "description": "The bakeoff skill, installable as a Claude Code plugin (auto-updating).",
+  "plugins": [
+    {
+      "name": "bakeoff",
+      "source": ".",
+      "description": "Turn one decision into a judged tournament of solutions, then pick the best."
+    }
+  ]
+}
