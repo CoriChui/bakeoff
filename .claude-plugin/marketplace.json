@@ -1,6 +1,6 @@
 {
   "name": "bakeoff",
-  "owner": { "name": "YOUR_USERNAME" },
+  "owner": { "name": "CoriChui" },
   "description": "The bakeoff skill, installable as a Claude Code plugin (auto-updating).",
   "plugins": [
     {

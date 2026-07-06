@@ -49,20 +49,20 @@ Pick one — all three install the same self-contained skill.
 **Agent Skills CLI** (works with Claude Code, Codex, Cursor):
 
 ```bash
-npx skills add YOUR_USERNAME/bakeoff
+npx skills add CoriChui/bakeoff
 ```
 
 **Claude Code plugin** (marketplace install, auto-updates):
 
 ```
-/plugin marketplace add YOUR_USERNAME/bakeoff
+/plugin marketplace add CoriChui/bakeoff
 /plugin install bakeoff@bakeoff
 ```
 
 **Manual** — clone straight into your skills directory:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/bakeoff.git ~/.claude/skills/bakeoff
+git clone https://github.com/CoriChui/bakeoff.git ~/.claude/skills/bakeoff
 ```
 
 Then in Claude Code:
