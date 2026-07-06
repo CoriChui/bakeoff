@@ -37,6 +37,16 @@ grounded in real facts when the decision needs it (see *Grounding*), not a gener
 
 If a test, type-check, or lint settles it, don't run a tournament — answer directly.
 
+**Rationalizations (when you're tempted to skip it).** These are the excuses that precede a bad,
+hard-to-reverse call — each is a reason to *run* the tournament, not skip it:
+
+| The excuse | The reality |
+|-----------|-------------|
+| "I already know the best option." | Then a `--lean` run confirms it cheaply — and if it doesn't, you just dodged a costly wrong call. Confidence isn't evidence. |
+| "Just pick the popular / default one." | Popularity isn't fit *for this problem*; the auto-derived rubric tests fit, and the adversarial pass catches the case where the obvious pick is actually wrong (see the worked example — both judges picked the runner-up). |
+| "Generating rivals is wasted effort." | Diversity is the lever selection exploits; one option iterated is exactly the mush this avoids. |
+| "There's no time." | `--lean` is ~3 candidates / 1 judge / minutes. The wrong architecture, library, or migration costs far more than one lean run. |
+
 ## Design principles (why it's built this way)
 - **Select, don't blend.** Diverse candidates + judge-based *selection* beats averaging them into
   mush — selection exploits the variance synthesis wastes. Synthesis is offered only as an optional
@@ -59,6 +69,12 @@ don't hard-code tool names, and reach for `ToolSearch` if a needed capability lo
 - **This codebase** — "how should *we*…", "refactor *our*…" → read the actual files + whatever project
   search exists; else `grep`/read directly.
 - **Self-contained / internal** decision → skip grounding; don't add latency.
+
+**Weigh what you find** — the same anti-homogeneity rule the candidates get, applied to evidence.
+Prefer primary/authoritative sources (official docs, the actual code, a maintainer's statement) over
+echoes; **dedup by *entity*, not string** (three blog posts repeating one release note are one fact,
+not three); and don't let a single loud source carry a whole dimension. A load-bearing claim rides
+on its *strongest* source, not the *count* of sources.
 
 Read-only grounding needs **no permission prompt** — the harness already gates tool use, so a second
 "may I search?" is pure friction. Reserve consent for genuinely costly, side-effecting, or auth-walled
@@ -302,6 +318,11 @@ lead with the **recommendation** (winner + why), then the **shortlist** and the 
 (the auditable core), each candidate with its judge-agreement, the refute result, dissents, optional
 synthesis, and the full rubric in a `<details>` block so the run is self-contained and reusable.
 
+**With `--html`**, also write a self-contained HTML twin next to the markdown (`…-<slug>.html`) —
+inline CSS, dark-mode, no JavaScript, no external assets — so it drops straight into Slack, email, or
+a wiki. Same content and numbers, presentation-ready; the markdown stays the source of truth. The
+HTML shape is specified in [`references/report-shape.md`](references/report-shape.md).
+
 ---
 
 ## Failure & edge cases
@@ -355,6 +376,7 @@ Entry-point (`--seed`, `--compare`) and depth (`--lean`, `--thorough`) flags are
 | `--roles "X, Y, Z"` | Override the auto-derived generator roles | Auto per problem |
 | `--synthesize` | Force the graft step even at default depth (still kept only if it out-scores the field) | — |
 | `--output <path>` | Custom report path | `docs/bakeoffs/…` |
+| `--html` | Also emit a self-contained HTML report (dark-mode, inline CSS, no JS) beside the markdown | — |
 
 ## Cost & honesty
 Roughly the cost of a few `evaluate` scoring passes (~$2–4 at default depth); the estimate is printed

@@ -36,7 +36,7 @@ You never supplied the six dimensions or their weights — and the adversarial p
 ## Why it's built this way
 
 - **Select, don't blend.** Diverse candidates + judge-based *selection* beats averaging them into mush. Synthesis is offered only as an optional final graft — and only kept if it *re-scores above* the best single candidate.
-- **Diversity is the biggest lever.** Each candidate generator gets a distinct, problem-specific role (e.g. `scalability-first` vs `migration-safety-first`), so the field genuinely spans the space.
+- **Diversity is the biggest lever.** Each candidate generator gets a distinct, problem-specific role (e.g. `cost-first` vs `status-quo`), so the field genuinely spans the space.
 - **Independent judges, mechanically reconciled** — not a debate (debate amplifies bias). Two judges score independently; a deterministic script merges them with a lower-score rule on disagreements.
 - **Position-bias controlled.** Each judge sees the candidates in a different shuffled order, referenced by stable IDs.
 - **The leader gets stress-tested.** Before committing, an adversarial pass actively tries to *refute* the top candidate. A plausible-but-wrong winner shouldn't survive.

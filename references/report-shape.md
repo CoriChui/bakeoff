@@ -68,3 +68,22 @@ Report: <path>
 
 Map score→bar over 10 blocks (`█` filled, `░` empty). Lead with the winner; show the shortlist
 bars so the human can see how close the field was at a glance.
+
+## HTML report (`--html`)
+
+When `--html` is passed, write a self-contained HTML twin next to the markdown report
+(`docs/bakeoffs/YYYY-MM-DD-<slug>.html`). It carries the **same content and numbers** as the
+markdown — just presentation-ready to drop into Slack, email, Notion, or a wiki. Hard requirements:
+
+- **Self-contained** — a single `.html` file: inline `<style>`, no external CSS/JS/fonts/CDN/images.
+  It must render identically offline.
+- **No JavaScript** — a static document only.
+- **Dark-mode default**, light via `@media (prefers-color-scheme: light)`; a system-font stack (no
+  web-font fetch); print-friendly.
+- **Lead with the verdict** — winner + overall score as the hero, then the shortlist and score matrix
+  as real `<table>`s (the auditable core), then per-candidate detail and the full rubric in a
+  `<details>` block — mirroring the markdown's order.
+- **Score bars** — render shortlist overalls as plain inline-CSS bars (a filled `<div>` whose width
+  is the score %); no scripts.
+- **Never invent** — the markdown is the source of truth; the HTML reformats it and must not add,
+  drop, or change a single number or verdict.
