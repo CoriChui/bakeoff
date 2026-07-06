@@ -1,0 +1,17 @@
+# Scratch/working state from bakeoff runs
+bakeoff-workspace/
+*-workspace/
+panel/
+judge*.yaml
+
+# Generated reports (keep only intentionally-committed examples)
+docs/bakeoffs/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Node
+node_modules/
