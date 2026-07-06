@@ -22,9 +22,9 @@ Type "clear" Enter
 Show
 
 Sleep 500ms
-Type `bakeoff "should our ingestion service be a monolith, a modular monolith, or split services?"`
+Type `bakeoff "8h/24h deadline: Batches vs keep-sync vs embedding-merge?"`
 Sleep 600ms
 Enter
 
-# Keep recording while demo.sh renders its paced output (~9s of internal sleeps).
-Sleep 11s
+# Keep recording while demo.sh renders its paced output (~10s of internal sleeps).
+Sleep 12s

@@ -5,6 +5,9 @@
 <p align="center">
   <img src="demo/bakeoff.gif" alt="bakeoff deriving roles, auto-building a rubric, judging candidates, and ranking a winner" width="820">
 </p>
+<p align="center">
+  <sub>Terminal summary from a real run — verdict and scores are from the saved <a href="examples/email-deadline-generation.md">report</a>, re-rendered at a readable pace.</sub>
+</p>
 
 `bakeoff` is a [Claude Code](https://docs.claude.com/en/docs/claude-code) skill. Hand it a decision
 and it **generates diverse candidate solutions**, **auto-derives the criteria that matter for _that_
@@ -118,7 +121,7 @@ describes the *decision*, not whichever option it might otherwise favor. Every r
 report (`docs/bakeoffs/YYYY-MM-DD-<slug>.md`) containing the recommendation, the shortlist, the full
 score matrix, judge agreement, and the rubric — so the decision is auditable and reusable later.
 
-See a full illustrative run in [`examples/`](examples/).
+See full saved reports — a real run and an illustrative one — in [`examples/`](examples/).
 
 ## Layout
 
@@ -132,10 +135,10 @@ bakeoff/
 │   └── evaluate-score.md        # scoring discipline (vendored)
 ├── scripts/
 │   └── reconcile-scores.js      # deterministic two-judge reconciliation (Node.js)
-├── examples/                    # illustrative run
+├── examples/                    # saved reports (a real run + an illustrative one)
 └── demo/
     ├── bakeoff.tape             # VHS script that renders the README GIF
-    ├── demo.sh                  # paced replay of a bakeoff summary
+    ├── demo.sh                  # paced replay of the real run's summary
     ├── setup.sh                 # hidden shell setup for the tape
     └── bakeoff.gif              # the rendered demo
 ```
