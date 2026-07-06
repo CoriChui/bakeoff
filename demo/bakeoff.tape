@@ -1,4 +1,7 @@
-# VHS tape for the README demo GIF.  Render with:  vhs demo/bakeoff.tape
+# VHS tape for the README demo GIF.
+# Prereq: `brew install vhs` (pulls ttyd + ffmpeg).
+# Render: `vhs demo/bakeoff.tape` → writes demo/bakeoff.gif.
+# Edit demo/demo.sh for the content, or this file for size/theme/pacing.
 # Docs: https://github.com/charmbracelet/vhs
 Output demo/bakeoff.gif
 

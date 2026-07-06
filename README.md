@@ -14,19 +14,19 @@
 The hard part of any comparison isn't the scoring — it's knowing *what to evaluate*. bakeoff derives the rubric for you. Here's the run shown in the GIF above:
 
 ```
-/bakeoff "8h/24h email-deadline path: Message Batches, keep sync per-cohort, or embedding-cosine merge?"
+/bakeoff "8h/24h email deadline: Batches vs keep-sync vs merge?"
 
-Roles derived → status-quo · cost-first (Batches) · dedup (merge) · max-savings (hybrid)
-Rubric (auto) → Deadline-fit 28 · COGS reduction 24 · Personalization 16 ·
-                Impl. complexity 16 · Ops reliability 12 · Reversibility 4      [approve? yes]
-Judges ×2 → reconcile → shortlist:
-   1. B  keep sync per-cohort   73   wins deadline-fit + simplicity; 0 on COGS
-   2. A  Message Batches        70   verified 50% off — small absolute saving at this volume
-   3. C  embedding merge        69
-   4. D  hybrid                 55
-Refute → both judges picked A; the adversarial pass showed the 50% cut is half of an already-tiny
-         bill (~$30–150/mo) — not worth the async machinery → flips to B.
-Winner: B — keep sync now; meter spend, escalate 24h-config projects to Batches past ~$200/mo.
+Roles  → status-quo · cost-first · dedup · max-savings
+Rubric → Deadline-fit 28 · COGS 24 · Personalization 16 ·
+         Complexity 16 · Ops 12 · Reversibility 4  [approve? yes]
+Judges ×2 → reconcile → shortlist
+   B  keep sync per-cohort   73   wins deadline-fit; 0 on COGS
+   A  Message Batches        70   50% off, tiny in absolute $
+   C  embedding merge        69
+   D  hybrid                 55
+Refute → both judges picked A, but the 50% cut is half of an
+         already-tiny bill (~$30–150/mo) → flips to B
+Winner → B: keep sync now; escalate 24h projects past ~$200/mo
 ```
 
 You never supplied the six dimensions or their weights — and the adversarial pass caught that the judges' pick rested on a saving too small to matter. That's the point.
@@ -57,7 +57,7 @@ Then in Claude Code:
 /bakeoff "which caching strategy should we use for the API layer?"
 ```
 
-That's it. The skill is **self-contained** — the rubric-builder, scorer, and reconciliation script are bundled (see [Layout](#layout)). No other skills required.
+That's it. The skill is **self-contained** — the rubric-builder, scorer, and reconciliation script are bundled (adapted from the `evaluate` skill). No other skills required.
 
 ### Requirements
 
@@ -106,41 +106,6 @@ FRAME → { GENERATE K candidates  ∥  BUILD RUBRIC } → [rubric gate] →
 The rubric is built **in parallel** with candidate generation and **blind to the candidates** — so it describes the *decision*, not whichever option it might otherwise favor. Every run ends with a saved report (`docs/bakeoffs/YYYY-MM-DD-<slug>.md`) containing the recommendation, the shortlist, the full score matrix, judge agreement, and the rubric — so the decision is auditable and reusable later.
 
 See full saved reports — a real run and an illustrative one — in [`examples/`](examples/).
-
-## Layout
-
-```
-bakeoff/
-├── SKILL.md                     # the skill itself (the instructions Claude follows)
-├── references/
-│   └── report-shape.md          # report & terminal-summary templates
-├── agents/
-│   ├── evaluate-build.md        # rubric builder (vendored from the `evaluate` skill)
-│   └── evaluate-score.md        # scoring discipline (vendored)
-├── scripts/
-│   └── reconcile-scores.js      # deterministic two-judge reconciliation (Node.js)
-├── examples/                    # saved reports (a real run + an illustrative one)
-└── demo/
-    ├── bakeoff.tape             # VHS script that renders the README GIF
-    ├── demo.sh                  # paced replay of the real run's summary
-    ├── setup.sh                 # hidden shell setup for the tape
-    └── bakeoff.gif              # the rendered demo
-```
-
-### Regenerating the demo GIF
-
-The hero GIF is scripted with [VHS](https://github.com/charmbracelet/vhs), so it re-renders identically:
-
-```bash
-brew install vhs        # one-time (pulls ttyd + ffmpeg)
-vhs demo/bakeoff.tape    # writes demo/bakeoff.gif
-```
-
-Edit `demo/demo.sh` to change the content or `demo/bakeoff.tape` for size/theme/pacing.
-
-## Credit
-
-The rubric-building and score-reconciliation logic is adapted from the `evaluate` skill; bakeoff vendors its own copies so it runs standalone.
 
 ## License
 
