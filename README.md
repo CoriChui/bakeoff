@@ -9,7 +9,7 @@
   <sub>Terminal summary from a real run — verdict and scores are from the saved <a href="examples/email-deadline-generation.md">report</a>, re-rendered at a readable pace.</sub>
 </p>
 
-`bakeoff` is a [Claude Code](https://docs.claude.com/en/docs/claude-code) skill. Hand it a decision and it **generates diverse candidate solutions**, **auto-derives the criteria that matter for _that_ specific problem** (so you don't have to know what to score on), **judges every candidate with independent scorers**, and returns the **winner plus a ranked shortlist** — with the reason each one won or lost.
+`bakeoff` is a [Claude Code](https://docs.claude.com/en/docs/claude-code) skill. Hand it a decision and it **generates diverse candidate solutions**, **auto-derives the criteria that matter for _that_ specific problem** (so you don't have to know what to score on), **judges every candidate with independent scorers**, and returns the **winner plus a ranked shortlist** — with the reason each one won or lost. You just type your request; it infers the shape (a comparison, an improvement, an idea, a *"what if we do X"*, a problem, or a scoping call), the depth, and the rubric — **no flags**.
 
 The hard part of any comparison isn't the scoring — it's knowing *what to evaluate*. bakeoff derives the rubric for you. Here's the run shown in the GIF above:
 
@@ -35,7 +35,7 @@ You never supplied the six dimensions or their weights — and the adversarial p
 
 ## Why it's built this way
 
-- **Select, don't blend.** Diverse candidates + judge-based *selection* beats averaging them into mush. Synthesis is offered only as an optional final graft — and only kept if it *re-scores above* the best single candidate.
+- **Select, then graft.** Diverse candidates + judge-based *selection* is the core. But when the top two are strong on *different* dimensions, it grafts the runner-up's best element into the winner — kept only if it *re-scores above* the best single candidate. In practice the graft wins or sharpens the pick about as often as it's discarded.
 - **Diversity is the biggest lever.** Each candidate generator gets a distinct, problem-specific role (e.g. `cost-first` vs `status-quo`), so the field genuinely spans the space.
 - **Independent judges, mechanically reconciled** — not a debate (debate amplifies bias). Two judges score independently; a deterministic script merges them with a lower-score rule on disagreements.
 - **Position-bias controlled.** Each judge sees the candidates in a different shuffled order, referenced by stable IDs.
@@ -86,27 +86,25 @@ Reach for bakeoff when **all three** hold:
 2. **Costly to reverse** — a wrong call is expensive to unwind.
 3. **Unclear criteria** — you can't easily say *why* one option should beat another.
 
-Good fits: architecture choices, library/database/tool selection, refactor strategies, migration approaches, "is the AI's suggestion actually good, or is there something better?"
+Good fits: architecture choices, library/database/tool selection, refactor strategies, migration approaches, "is the AI's suggestion actually good, or is there something better?" — and you needn't phrase any of them as a "decision." Any request *shape* qualifies: a comparison ("X vs Y"), an improvement ("best way to X"), an idea ("what should we build"), a proposal ("what if we do X"), a problem ("how do we handle this"), or a scoping call ("minimal X before launch"). bakeoff recognizes the shape itself.
 
-**Don't** use it when a test, type-check, or lint settles the question, or when you're scoring a single artifact with no alternatives — that's a job for a plain evaluation, not a tournament.
+**Don't** use it when a test, type-check, or lint settles the question, or when you're scoring a single artifact with no alternatives — that's a job for a plain evaluation, not a tournament. (Low-stakes or single-obvious-answer "which/how" questions are a direct answer, not a tournament — the three-part gate above still governs.)
 
-## Modes & depth
+## How it decides — no flags needed
 
-| Entry point | What it does |
-|---|---|
-| `/bakeoff "<problem>"` | **Generate** — invents the candidates (default). |
-| `/bakeoff --seed <path\|"text"> "<problem>"` | **Seed** — keeps your existing plan as Candidate A and generates rivals around it. |
-| `/bakeoff --compare` (+ 2–4 pasted candidates) | **Compare** — pure judging over what you bring. |
+You just type your request. bakeoff infers the rest:
 
-Depth auto-scales to the stakes (override with `--lean` / `--thorough`):
+- **Entry point** — it almost always **generates** the candidates itself. If your prompt *names* a concrete option or plan ("should the hero be GitHub-only?", "A vs B vs C"), that becomes a candidate and it invents rivals around it. Either way it **always adds rivals** — you never just judge what you brought.
+- **Floor candidate** — for a proposal / idea / scoping request it always includes a genuine *defer / do-the-minimal / status-quo* candidate, and the rubric rewards restraint, so **"not yet" can win** (in real runs it often does).
+- **Depth** — auto-scaled to the *grounded stakes* of the call, not the surface of the question:
 
 | Depth | Candidates | Judges | Refute | Synthesis | Auto-picked when… |
 |-------|-----------|--------|--------|-----------|-------------------|
-| `--lean` | 3 | 1 | no | no | narrow · low blast radius · reversible |
-| *default* | 4 | 2 + reconcile | yes | offered | several defensible options · costly-but-recoverable |
-| `--thorough` | 5–6 | 2 + reconcile | yes | yes | irreversible · prod · data-model / public-API / migration / security |
+| lean | 3 | 1 | no | no | narrow · low grounded magnitude · reversible |
+| default | 4 | 2 + reconcile | yes | attempted | several defensible options · material stakes · recoverable |
+| thorough | 5–6 | 2 + reconcile | yes | yes | irreversible · prod · data-model / public-API / migration / security |
 
-See [`SKILL.md`](SKILL.md) for the full flag list and pipeline.
+Power users can still override — `--lean` / `--thorough` (depth), `--seed <plan>` (force a plan as Candidate A), `--compare` (judge pasted candidates) — but **none are required**. See [`SKILL.md`](SKILL.md) for the full pipeline.
 
 ## How it works
 
