@@ -1,6 +1,6 @@
 ---
 name: bakeoff
-argument-hint: "<request — a decision, idea, comparison, or 'what if'> [--lean | --thorough]"
+argument-hint: "<request — a decision, idea, comparison, or 'what if'>"
 description: >
   Turn one decision into a judged tournament of solutions, then pick the best. Given a problem,
   design choice, or a suggestion you want cross-verified, it generates diverse candidate solutions,
