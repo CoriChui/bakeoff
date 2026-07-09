@@ -7,6 +7,9 @@ judge*.yaml
 # Generated reports (keep only intentionally-committed examples)
 docs/bakeoffs/
 
+# Private design-analysis corpus (references internal/private projects — never publish)
+analysis/
+
 # OS / editor
 .DS_Store
 *.swp

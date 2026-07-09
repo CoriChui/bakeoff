@@ -1,12 +1,14 @@
 ---
 name: bakeoff
-argument-hint: "<decision> [--seed <plan>] [--compare] [--lean | --thorough]"
+argument-hint: "<request — a decision, idea, comparison, or 'what if'> [--lean | --thorough]"
 description: >
   Turn one decision into a judged tournament of solutions, then pick the best. Given a problem,
   design choice, or a suggestion you want cross-verified, it generates diverse candidate solutions,
   auto-derives the evaluation dimensions for THAT problem (so you don't have to know what to score
   on), judges every candidate with independent scorers, and returns the winner plus a ranked top-N
-  shortlist with a score matrix and rationale. Reach for it whenever there are several defensible
+  shortlist with a score matrix and rationale. It auto-infers the request shape — idea · improvement ·
+  comparison · proposal ("what if we do X") · problem-solving · scoping — from your bare prompt, with
+  no flags. Reach for it whenever there are several defensible
   approaches, the call is costly to reverse, and you can't easily say why one option wins — even if
   the user doesn't say "compare" or "decide": "what's the best way to structure X", "which
   approach/library/database/design should I pick", "compare these two plans", "is the AI's
@@ -37,6 +39,13 @@ grounded in real facts when the decision needs it (see *Grounding*), not a gener
 
 If a test, type-check, or lint settles it, don't run a tournament — answer directly.
 
+**Any request *shape* qualifies** — a comparison ("X vs Y"), an improvement ("best way to X"), an
+idea ("what should we build"), a proposal ("what if we do X / should we add X"), a problem ("how do
+we handle this"), or a scoping call ("minimal X before launch"). You infer the shape (Step 1); the
+user need not phrase it as a "decision." **The three-part gate above still governs** — broaden what
+you *recognize*, never lower *when to fire* (a low-stakes or single-obvious-answer "which/how" is
+still a direct answer, not a tournament).
+
 **Rationalizations (when you're tempted to skip it).** These are the excuses that precede a bad,
 hard-to-reverse call — each is a reason to *run* the tournament, not skip it:
 
@@ -48,9 +57,11 @@ hard-to-reverse call — each is a reason to *run* the tournament, not skip it:
 | "There's no time." | `--lean` is ~3 candidates / 1 judge / minutes. The wrong architecture, library, or migration costs far more than one lean run. |
 
 ## Design principles (why it's built this way)
-- **Select, don't blend.** Diverse candidates + judge-based *selection* beats averaging them into
-  mush — selection exploits the variance synthesis wastes. Synthesis is offered only as an optional
-  final graft, and it must *re-score above* the best single candidate to be used.
+- **Select, then graft.** Diverse candidates + judge-based *selection* is the core — it exploits
+  variance a naive average would waste. But synthesis is a *first-class* follow-up, not a grudging
+  afterthought: when the top two are strong on *different* dimensions, graft the runner-up's best
+  element into the winner and keep it **only if it re-scores above the best single candidate** (the
+  guard). In practice the graft wins or sharpens the pick as often as it's discarded.
 - **Diversity is the biggest lever.** Candidate generators get **distinct, problem-specific roles**;
   a homogeneous set of candidates makes the whole exercise pointless.
 - **Independent judges, mechanically reconciled** — not a free debate (debate can amplify bias).
@@ -67,7 +78,13 @@ don't hard-code tool names, and reach for `ToolSearch` if a needed capability lo
 - **External facts** — a library / tool / version, or current best practice → a live web or
   docs-search tool.
 - **This codebase** — "how should *we*…", "refactor *our*…" → read the actual files + whatever project
-  search exists; else `grep`/read directly.
+  search exists; else `grep`/read directly. In a repo, **default to reading the code** — the decisive
+  fact (a silent fallback, a "phantom" regression that can't actually happen, a data-loss path) is
+  usually only found by grounding, not by reasoning.
+- **Attached images / screenshots** — a UI bug, a mockup, a diagram in the prompt → read them; they
+  are often the load-bearing evidence.
+- **A decision this reverses** — "overturn our X decision", "we decided Y before" → read the referenced
+  ADR / decision doc so the reversal is argued against the *real* prior rationale, not a guess at it.
 - **Self-contained / internal** decision → skip grounding; don't add latency.
 
 **Weigh what you find** — the same anti-homogeneity rule the candidates get, applied to evidence.
@@ -83,11 +100,20 @@ facts are current), say so and mark the affected output "training-knowledge only
 ungrounded pick presented as confident is the one failure this step exists to prevent.
 
 ## Modes & depth
-**Entry point** — how the candidates arrive:
-- **Generate** (default): `/bakeoff "<problem>"` — invents the candidates.
-- **Seed**: `/bakeoff --seed <path|"text"> "<problem>"` — keeps your existing plan as **Candidate
-  A** and generates rivals around it (the "cross-verify what the AI gave me" case).
-- **Compare**: `/bakeoff --compare` (+ 2–4 pasted candidates) — pure judging over what you bring.
+**Entry point — inferred from the prompt, no flag needed.** You almost always **generate** the
+candidates. The only variation, inferred automatically:
+- **If the prompt names a concrete option or hands you a plan/proposal** ("X vs Y vs Z", "should the
+  hero be GitHub-only?", "what if we collapse to one UI?") → make each *named, concrete* option a
+  candidate **and still invent 1–2 rivals + the floor candidate** (see Step 2). This is the
+  "cross-verify what I've got / weigh these options" case — it needs no flag.
+- **Otherwise** → generate the whole field from scratch.
+- Either way, **always add rivals** — never just judge what the user handed you (a homogeneous field
+  is the failure this skill exists to prevent). A *vague* direction ("show info or trigger something")
+  is **not** a concrete option — generate from scratch, don't seed it.
+
+*Optional power-user overrides* (rarely needed — the inference above covers them): `--seed <path|"text">`
+forces a plan as Candidate A; `--compare` (+2–4 pasted candidates) does pure judging with no generation
+(still add rivals unless the user insists on judging only their set).
 
 **Depth** — how hard it tries. **When no depth flag is passed, Frame auto-selects one from the
 decision's *grounded* stakes** (surfaced at the checkpoint, where you can bump it); an explicit
@@ -159,7 +185,25 @@ the decision" preamble — the user knows what they ran and doesn't need the plu
 with the substance (the derived roles, then the rubric at the checkpoint). Verify the reused
 `evaluate` assets exist **silently** (*Dependencies & schema contract*) and speak up *only* if one is
 missing — then say bakeoff builds on the `evaluate` skill and stop. Extract the **decision**, any
-hard constraints, the mode (generate / seed / compare), and the shortlist size `N` (default 3).
+hard constraints, and the shortlist size `N` (default 3).
+
+**Classify the request shape (inferred from the prompt, never a flag) — it drives how candidates
+arrive and what the rubric must weight:**
+- **comparison** ("X vs Y vs Z", "A or B") → each *named, concrete* option becomes a candidate; still
+  invent 1–2 adjacents.
+- **proposal** ("what if we do X", "should we add X") · **idea** ("what should we build", "which
+  surface") · **scoping** ("minimal X before launch", "smallest thing that…") → generate, and
+  **always include a genuine defer / minimal / status-quo candidate** (do-nothing · keep-what-we-have
+  · ship-the-smallest-thing · just-measure). In real runs the defer option *often wins* — but only if
+  it's actually in the field and the rubric can reward it (Step 3).
+- **problem-solving** ("how do we handle [this diagnosed problem]") → generate strategies; include a
+  **minimal / highest-leverage-least-effort** candidate (the cheapest thing that moves the needle).
+- **improvement / structure** ("best way to revise/organize X", "make X better") → generate approaches;
+  a positive answer is required, so **no** forced defer candidate.
+
+A secondary either/or bundled in the prompt (e.g. "…and should we gate it or show it live?") is **a
+rubric axis or a line in the recommendation, not a separate set of candidates.**
+
 **Choose the depth — from *grounded* stakes, not the question's surface.** Honor an explicit
 `--lean`/`--thorough`; otherwise infer it, but **sniff the real magnitude first** (as a cheap part of
 grounding, before locking the tier): what does a wrong call actually cost — dollars/month, blast
@@ -185,13 +229,22 @@ migration-safety-first`; a library choice → `DX-first · lock-in-averse · mai
 performance-first`; a refactor → `blast-radius-minimal · incremental · clean-slate ·
 test-coverage-first`. State the chosen roles in one line so the diversity is visible.
 
+**Include the right "floor" candidate (from the request shape, Step 1).** For a **proposal / idea /
+scoping** request, one of the K roles *must* be a genuine **defer / minimal / status-quo** —
+do-nothing · keep-what-we-have · ship-the-smallest-thing · just-measure-and-learn. For
+**problem-solving**, include a **minimal / highest-leverage-least-effort** option. This isn't padding:
+across real runs the floor candidate frequently *wins*, and a field without it simply cannot produce
+the correct "not yet / do the smallest thing" answer. **Skip the floor for improvement/comparison**,
+where a positive answer is required.
+
 Dispatch **K generator subagents in parallel**, one per role (model: **Sonnet**; `K` = 4 by default,
 **3 under `--lean`, 5–6 under `--thorough`**). Each returns a **self-contained candidate**: the
 approach, key decisions, tradeoffs it accepts, and (for code) concrete shape/`file:line` touch-points
 — not a vague sketch. **Ground them when the decision needs it** (*Grounding*): search current facts
 for a tool/library choice, read the real code for a codebase choice — so candidates are specific, not
-generic guesses. Assign stable IDs (**A, B, C, …**). In `--seed` mode, the seeded suggestion is
-**Candidate A**; generate `K-1` rivals.
+generic guesses. Assign stable IDs (**A, B, C, …**). If the prompt named a concrete option/proposal
+(or `--seed` was passed), that becomes **Candidate A** and you generate `K-1` rivals; otherwise all K
+are invented from scratch.
 
 **Carry the grounding forward.** When a candidate grounds a load-bearing claim, it must surface the
 *evidence anchor* alongside the claim — the exact `file:line` it read, or the URL/doc + the specific
@@ -209,7 +262,16 @@ Dispatch the **evaluate skill's Framework Builder** to derive the dimensions, we
 rubric **for this decision** — read and follow the bundled `agents/evaluate-build.md` (in this skill's directory), passing the
 **decision + domain (and the role list), not the generated candidates** (**rubric model follows the
 depth**: Opus at default/`--thorough`, Sonnet at `--lean` — see *Modes & depth*). This produces the
-criteria you didn't know to pick. For a decision that hinges on current external facts, the builder grounds its
+criteria you didn't know to pick.
+
+**For proposal / idea / scoping requests, the rubric MUST include a dimension where *deferring — or
+doing the minimal thing — when justified scores HIGH*** (stage-fit · opportunity cost · reversibility ·
+low-regret). Without it the correct "don't build it yet" answer literally cannot win — in real runs
+the defer candidate won *because* the rubric rewarded restraint on exactly this dimension. Do **not**
+add it for improvement/comparison, where a positive answer is required and "do nothing" isn't on the
+table.
+
+For a decision that hinges on current external facts, the builder grounds its
 dimensions the same way (*Grounding*) so they reflect today's reality — and marks the rubric
 training-knowledge-only if it can't. Validate it the same way evaluate does (weights sum to 100, all 5 bands,
 concrete criteria, `scoring_guide` present).
@@ -302,11 +364,15 @@ back to the judges to **re-score only the affected dimension(s)**, then re-recon
 judged result, not the orchestrator's opinion). If the adversarial agent fails, retry once, then
 proceed and note the leader wasn't stress-tested.
 
-**Synthesis** (offered by default, **forced under `--thorough`**, **skipped under `--lean`**) **is
-optional and must earn its place:** only if grafting a runner-up's strongest
-element(s) into the winner is coherent, generate the merged candidate and **re-score it against the
-same rubric** — keep it only if it beats the best single candidate; otherwise report the single
-winner and note synthesis didn't help (blending often wastes the variance that made selection work).
+**Synthesis — attempt the graft by default when the top two are complementary** (**forced under
+`--thorough`**, **skipped only under `--lean`**). When the winner and a close runner-up are strong on
+*different* high-weight dimensions, graft the runner-up's strongest element(s) into the winner,
+generate the merged candidate, and **re-score it against the same rubric**. Keep it **only if it
+out-scores the best single candidate** — that guard is what makes this safe. This earns its place
+often: across real runs a synthesis has *won outright* about as often as it's been discarded, and
+even when the single winner holds, the graft usually sharpens the recommendation. (The "blending
+wastes variance" caution only bites when the top two *aren't* actually complementary — then the
+re-score guard rejects the merge and you ship the single winner, no harm done.)
 
 ### 6. Report
 Assemble the report **inline** (or one fast Haiku pass) — it's formatting, not reasoning, so don't
@@ -366,8 +432,10 @@ per-candidate YAML to its own file and pass the pair to the script; use the merg
 scores it returns. (The single-judge `--lean` case is handled inline in Step 4.)
 
 ## Flags
-Entry-point (`--seed`, `--compare`) and depth (`--lean`, `--thorough`) flags are defined in
-*Modes & depth* above. The remaining knobs:
+**No flags are required** — the request shape, entry point (generate vs seed-a-named-option), depth,
+and rubric are all inferred from a bare prompt. The flags below are optional overrides. Entry point
+(`--seed`, `--compare`) and depth (`--lean`, `--thorough`) are defined in *Modes & depth* above; the
+remaining knobs:
 
 | Flag | Purpose | Default |
 |------|---------|---------|
